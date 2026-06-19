@@ -49,7 +49,8 @@ It’s common for internal services to skip validation because they’re “insi
 
 ### Not Validating File Uploads or Filenames
 
-File uploads are a huge attack surface. You need to validate the file type, size, extension, and even the filename. Attackers can sneak in traversal sequences or special characters that cause trouble later. [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/)
+File uploads introduce significant risk. Applications must validate file type, size, extension, and filename to prevent traversal sequences, unexpected characters, or malicious payloads.
+Reference: OWASP File Upload Cheat Sheet (cheatsheetseries.owasp.org in Bing).
 
 ### Using Unsafe or Overly Complex Regular Expressions
 
@@ -62,7 +63,7 @@ Reference: OWASP API Security Top 10 – API4:2023 (Unrestricted Resource Consum
 
 ### Overlooking Unicode Normalization
 
-Normalization must occur before validation so that visually similar or canonically equivalent characters are evaluated consistently. However, Unicode TR36 warns that normalization alone is not a security control — it must be paired with strict allowlisting and canonicalization rules.Reference: Unicode Technical Report #36 (Security Considerations).
+Unicode characters can appear visually identical or behave inconsistently across systems. Normalization must occur before validation so that equivalent characters are evaluated consistently. However, Unicode TR36 warns that normalization alone is not a security control — it must be paired with strict allowlisting and canonicalization rules.Reference: Unicode Technical Report #36 (Security Considerations).
 
 ### Assuming JSON Input Is Automatically Safe
 
