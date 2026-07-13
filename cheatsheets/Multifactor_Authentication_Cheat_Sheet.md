@@ -371,89 +371,107 @@ The are a number of common types of biometrics that are used, including:
 
 ## Modern MFA Attack Patterns and Mitigations
 
-Attackers increasingly target MFA deployments and authentication rather than attempting to bypass MFA directly.The following sections describe common attacks and recommended mitigations. Each attack pattern includes mitigations aligned with current NIST, CISA, Microsoft Entra ID, and FIDO2/WebAuthn guidance.
+Attackers increasingly target weaknesses in MFA deployments, authentication workflows, and authenticated sessions rather than attempting to defeat MFA cryptographically. The following attack patterns summarize common techniques and recommended mitigations based on current guidance from NIST, CISA, OAuth, and the FIDO Alliance.
 
-### MFA Fatigue Attacks (Push Notification Bombing)
+### MFA Fatigue (Push Notification Bombing)
 
-Attackers repeatedly trigger MFA push notifications hoping the user approves one out of annoyance or accidental interaction.
-
-#### Mitigations
-
-- Enforce number matching (challenge–response) to prevent blind approvals.  
-  [Microsoft Entra ID – Number Matching](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-number-matching)
-
-- Deploy phishing-resistant MFA to eliminate push-based MFA fatigue.  
-  [CISA – Implementing Phishing-Resistant MFA](https://www.cisa.gov/resources-tools/resources/implementing-phishing-resistant-mfa)
-
-### Real-Time Phishing (Adversary-in-the-Middle / AiTM)
-
-Reverse-proxy phishing kits (such as Evilginx, Modlishka, and Muraena) intercept credentials and session cookies, enabling attackers to impersonate users in real time.
+Attackers repeatedly send MFA push notifications, often combined with social engineering, hoping the user eventually approves one.
 
 #### Mitigations
 
-- Mandate phishing-resistant MFA (FIDO2/WebAuthn), which binds authentication to the legitimate origin and prevents AiTM replay.  
-  [CISA – Implementing Phishing-Resistant MFA](https://www.cisa.gov/resources-tools/resources/implementing-phishing-resistant-mfa)
+- Require challenge-response push authentication (for example, number matching) to prevent blind approval of authentication requests.
+- Prefer phishing-resistant authenticators (FIDO2/WebAuthn), which eliminate push-based approval attacks.
 
-- Use risk-based authentication to detect suspicious post-compromise activity such as proxy IPs or anomalous locations.  
-  [CISA Zero Trust Maturity Model v2.0](https://www.cisa.gov/resources-tools/resources/zero-trust-maturity-model)
+**References**
 
-- Monitor for indicators of AiTM activity, such as anomalous sign‑in locations,reverse‑proxy infrastructure,token replay, or suspicious session behavior.
-  [Microsoft Entra ID – AiTM Attack Analysis](https://learn.microsoft.com/en-us/entra/identity-protection/overview-aitm)
+- NIST SP 800-63B: https://pages.nist.gov/800-63-4/sp800-63b.html
+- CISA – Implementing Phishing-Resistant MFA: https://www.cisa.gov/resources-tools/resources/implementing-phishing-resistant-mfa
+
+---
+
+### Real-Time Phishing (Adversary-in-the-Middle)
+
+Reverse-proxy phishing frameworks relay authentication traffic between the user and the legitimate service to capture credentials, session cookies, or authentication tokens.
+
+#### Mitigations
+
+- Require phishing-resistant authenticators (FIDO2/WebAuthn), which bind authentication to the legitimate origin and are resistant to adversary-in-the-middle phishing.
+- Monitor for anomalous authentication and session activity to detect potential session hijacking following successful authentication.
+
+**References**
+
+- NIST SP 800-63-4: https://pages.nist.gov/800-63-4/sp800-63b.html
+- CISA – Implementing Phishing-Resistant MFA: https://www.cisa.gov/resources-tools/resources/implementing-phishing-resistant-mfa
+- FIDO Alliance Specifications: https://fidoalliance.org/specifications/
+
+---
 
 ### SIM Swap and Phone Number Takeover
 
-Attackers socially engineer telecom providers to transfer a victim’s phone number, intercepting SMS or voice MFA codes.
+Attackers convince a telecommunications provider to transfer a victim's phone number, allowing interception of SMS or voice-based one-time passwords.
 
 #### Mitigations
 
-- Deprecate telephony-based MFA for high-privilege or sensitive accounts.  
-  [NIST SP 800-63-4 – Digital Identity Guidelines](https://pages.nist.gov/800-63-4/sp800-63.html)
+- Avoid SMS or voice-based MFA for privileged or high-value accounts.
+- Prefer phishing-resistant authenticators (FIDO2/WebAuthn). Where these are not available, TOTP authenticator applications provide stronger protection than SMS or voice-based OTP.
 
-- Prefer TOTP authenticator apps or FIDO2 hardware keys, which are not vulnerable to number-porting attacks.
+**References**
+
+- NIST SP 800-63: https://pages.nist.gov/800-63-4/
+- CISA – Implementing Phishing-Resistant MFA: https://www.cisa.gov/resources-tools/resources/implementing-phishing-resistant-mfa
+
+---
 
 ### Token Theft and Session Hijacking
 
-Infostealer malware, malicious browser extensions, or cross-site scripting (XSS) can steal session cookies or tokens, bypassing MFA entirely.
+Malware, malicious browser extensions, or cross-site scripting (XSS) can steal session cookies or authentication tokens, allowing attackers to access authenticated sessions without repeating MFA.
 
 #### Mitigations
 
-- Implement Continuous Access Evaluation (CAE) with short-lived tokens to reduce replay windows.  
-  [Microsoft CAE](https://learn.microsoft.com/en-us/azure/active-directory/conditional-access/concept-continuous-access-evaluation)
+- Use short-lived access tokens and continuous session evaluation where supported to reduce opportunities for token replay.
+- Protect session cookies using the `HttpOnly`, `Secure`, and appropriate `SameSite` cookie attributes.
+- Where supported, use proof-of-possession mechanisms to reduce token replay.
 
-- Enforce secure cookie attributes (HttpOnly, Secure, and an appropriate SameSite value) and, where supported, use device-based Conditional Access or proof-of-possession tokens to reduce token replay.
-  
-- Use impossible travel detection to identify stolen tokens replayed from different geographies.  
-  [Microsoft Entra ID – Identity Protection](https://learn.microsoft.com/en-us/entra/id-protection/howto-identity-protection-investigate-risky-users#impossible-travel)
+**References**
+
+- OAuth 2.0 Security Best Current Practice (RFC 9700): https://datatracker.ietf.org/doc/rfc9700/
+- OWASP Session Management Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
+
+---
 
 ### Device Binding Bypass
 
-Attackers attempt to bypass device-based authentication by exploiting weak device binding, extracting exportable keys, or replaying cloned device attributes when authenticators are not hardware‑protected.
+Attackers attempt to bypass device-based authentication by extracting exportable credentials or replaying cloned device attributes when authenticators are not hardware protected.
 
 #### Mitigations
 
-- Use hardware-backed, non-exportable device keys (TPM, Secure Enclave) to prevent cloning.  
-  [NIST SP 800-63-4B – Authenticator Assurance Levels](https://pages.nist.gov/800-63-4/sp800-63b.html)
+- Prefer hardware-backed, non-exportable cryptographic keys where supported.
+- Prefer FIDO2/WebAuthn authenticators, which provide origin-bound public-key authentication that resists phishing and credential replay.
+- Where attestation is required, validate authenticator attestation according to organizational policy.
 
-- Prefer FIDO2/WebAuthn, which provides origin-bound and device-bound authentication resistant to device spoofing.  
-  [FIDO Alliance – Specifications](https://fidoalliance.org/specifications/)
+**References**
 
-- Validate device attestation metadata to ensure the authenticator is genuine and hardware-protected.  
-  [W3C WebAuthn Level 2 – Attestation Formats](https://www.w3.org/TR/webauthn-2/#sctn-attestation)
+- NIST SP 800-63B: https://pages.nist.gov/800-63-4/sp800-63b.html
+- W3C WebAuthn: https://www.w3.org/TR/webauthn-3/
+- FIDO Alliance Specifications: https://fidoalliance.org/specifications/
 
-### MFA Downgrade Attacks (OAuth/SSO)
+---
 
-Attackers manipulate authentication flows to downgrade from strong MFA (such as WebAuthn) to weaker legacy methods (such as SMS or basic authentication).
+### MFA Downgrade Attacks
+
+Attackers attempt to downgrade authentication from phishing-resistant methods to weaker authentication mechanisms or legacy protocols.
 
 #### Mitigations
 
-- Disable legacy authentication endpoints such as basic auth and older WS-Trust flows.  
-  [Microsoft Entra ID – Blocking Legacy Authentication](https://learn.microsoft.com/en-us/entra/identity/conditional-access/block-legacy-authentication)
+- Disable legacy authentication protocols and endpoints that cannot enforce modern MFA requirements.
+- Prevent fallback from phishing-resistant authenticators to lower-assurance authentication methods unless explicitly authorized.
+- Follow OAuth 2.0 Security Best Current Practice when implementing OAuth-based authentication flows.
 
-- Enforce conditional access policies that forbid fallback to lower-assurance methods for privileged accounts.
+**References**
 
-- Follow OAuth 2.0 Security Best Current Practice to prevent downgrade and redirect-based manipulation.  
-  [RFC 9700 – OAuth 2.0 Security Best Current Practice](https://datatracker.ietf.org/doc/rfc9700/)
-
+- OAuth 2.0 Security Best Current Practice (RFC 9700): https://datatracker.ietf.org/doc/rfc9700/
+- NIST SP 800-63B: https://pages.nist.gov/800-63-4/sp800-63b.html
+  
 ## Somewhere You Are
 
 Location-based authentication is based on the user's physical location. It is sometimes argued that location is used when deciding whether or not to require MFA (as discussed [above](#when-to-require-mfa)) however this is effectively the same as considering it to be a factor in its own right. Two prominent examples of this are the [Conditional Access Policies](https://docs.microsoft.com/en-us/azure/active-directory/conditional-access/overview) available in Microsoft Azure, and the [Network Unlock](https://docs.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-how-to-enable-network-unlock) functionality in BitLocker.
